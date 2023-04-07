@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33414.496
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Des", "Des\Des.csproj", "{875A4D3F-6515-4DEF-93B2-658FDB9A66A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rijndael", "Rijndael\Rijndael.csproj", "{7C766473-2062-4F18-A3AF-B12C79D0BF10}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{875A4D3F-6515-4DEF-93B2-658FDB9A66A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{875A4D3F-6515-4DEF-93B2-658FDB9A66A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{875A4D3F-6515-4DEF-93B2-658FDB9A66A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{875A4D3F-6515-4DEF-93B2-658FDB9A66A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C766473-2062-4F18-A3AF-B12C79D0BF10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C766473-2062-4F18-A3AF-B12C79D0BF10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C766473-2062-4F18-A3AF-B12C79D0BF10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C766473-2062-4F18-A3AF-B12C79D0BF10}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5861A85B-B5F5-4182-A9AF-BF42A567DBDD}
+	EndGlobalSection
+EndGlobal
