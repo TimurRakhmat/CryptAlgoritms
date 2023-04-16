@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,9 @@ namespace Des
 {
     public class CryptCore
     {
-        void set_sblock()
+        static public int[][] box = new int[8][];
+       
+        static public void set_sblock()
         {
             box[0] = new int[]  { 14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
                                0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
@@ -50,21 +53,31 @@ namespace Des
                                7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8,
                                2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11};
         }
+     
         public CryptCore() {
+
+            set_sblock();
+
+            //byte[] mbox = new byte[1];
+            //mbox[0] = 0x2B;
+            //sblcok_transform(ref mbox, box[0], 6);
+
+            //Console.WriteLine(mbox[0]);
+
             string s = "qwew1234";
             byte[] bytes = Encoding.UTF8.GetBytes(s);
             byte[] result = new byte[bytes.Length];
             bytes.CopyTo(result, 0);
+
             Permutation(ref bytes, primaryPerm);
+
+
             Permutation(ref bytes, reversePerm);
 
-            s = Encoding.UTF8.GetString(bytes);
-            Console.WriteLine(s);
-
         }
-     
-        
-        public int[] primaryPerm = { 58, 50, 42, 34, 26, 18, 10, 2,
+
+
+        static public int[] primaryPerm = { 58, 50, 42, 34, 26, 18, 10, 2,
                                     60, 52, 44, 36, 28, 20, 12, 4,
                                     62, 54, 46, 38, 30, 22, 14, 6,
                                     64, 56, 48, 40, 32, 24, 16, 8,
@@ -74,7 +87,7 @@ namespace Des
                                     63, 55, 47, 39, 31, 23, 15, 7
         };
 
-        public int[] reversePerm = { 40, 8, 48, 16, 56, 24, 64, 32,
+        static public int[] reversePerm = { 40, 8, 48, 16, 56, 24, 64, 32,
                                      39, 7, 47, 15, 55, 23, 63, 31,
                                      38, 6, 46, 14, 54, 22, 62, 30,
                                      37, 5, 45, 13, 53, 21, 61, 29,
@@ -84,26 +97,36 @@ namespace Des
                                      33, 1, 41, 9,  49, 17, 57, 25
         };
 
-        public int[][] box = new int[8][];
+        
          
-        private void Permutation(ref byte[] bytes, int[] pblock)
+        static public void Permutation(ref byte[] bytes, int[] pblock)
         {
             byte[] bytes1 = new byte[bytes.Length];
-            bytes.CopyTo(bytes1, 0);
             for (int i = 0; i < pblock.Length; i++)
             {
                 int x = i / 8;
                 int y = i % 8;
-                int xx = (pblock[x] - 1) / 8;
-                int yy = (pblock[y] - 1) % 8;
+                int xx = (pblock[x*8 + y] - 1) / 8;
+                int yy = (pblock[x*8 + y] - 1) % 8;
 
-                bytes1[xx] |= (byte)(((bytes[x] >> y) & 0x01) << yy);
+                byte temp = (byte)(((bytes[xx] >> yy) & 0x01) << y);
+                bytes1[x] |= temp;
             }
+            bytes1.CopyTo(bytes, 0);
         }
 
-        private void sblcok_transform(byte[] bytes, int[]sbox, )
+        private void sblcok_transform(ref byte[] bytes, int[] sbox, int k)
         {
+            int x = k / 8;
+            int y = k % 8;
 
+            int index = 0;
+            index += bytes[0] & 0x01;
+            index += ((bytes[x] >> (y-1)) & 0x01) << 1;
+
+            int indexcol = (bytes[0] >> 1) & 0x0F;
+
+            bytes[0] = (byte)sbox[index * 16 + indexcol];
         }
     }
 
