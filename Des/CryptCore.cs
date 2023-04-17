@@ -115,7 +115,7 @@ namespace Des
             bytes1.CopyTo(bytes, 0);
         }
 
-        private void sblcok_transform(ref byte[] bytes, int[] sbox, int k)
+        static public void sblcok_transform(ref byte[] bytes, int[] sbox, int k)
         {
             int x = k / 8;
             int y = k % 8;

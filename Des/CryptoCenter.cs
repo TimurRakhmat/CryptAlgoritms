@@ -6,13 +6,17 @@ using System.Threading.Tasks;
 
 namespace Des
 {
-    internal class CryptoCenter : ICryptTransform2
+    internal class CryptoCenter : ICryptTransform2, IKeyGenerate
     {
+        public byte[][] round_key;
         public enum CryptType
         {
             ECB, CBC, CFB, OFB, CTR, RD, RD_H
         }
-        public CryptoCenter(byte[] key, CryptType type, string ipv = "12345678", params int[] other) { }
+        public CryptoCenter(byte[] key, CryptType type, string ipv = "12345678", params int[] other) 
+        {
+            round_key = generateKey(key);
+        }
 
         public void cryptBytes(byte[] data, ref byte[] outdata) { }
         public void decryptBytes(byte[] data, ref byte[] outdata) { }
@@ -20,12 +24,17 @@ namespace Des
         public void cryptFile(string filepath, string outfilepath) { }
         public void decryptFile(string filepath, string outfilepath) { }
 
-        byte[] ICryptTransform2.crypt(byte[] data, byte[] key)
+        public virtual byte[] crypt(byte[] data, byte[] key)
         {
             throw new NotImplementedException();
         }
 
-        byte[] ICryptTransform2.encrypt(byte[] data, byte[] key)
+        public virtual byte[] encrypt(byte[] data, byte[] key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual byte[][] generateKey(byte[] key)
         {
             throw new NotImplementedException();
         }

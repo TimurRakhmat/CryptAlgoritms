@@ -9,9 +9,35 @@ class Program
     {
         Console.WriteLine("Hello world!");
 
-        string keystring = "Ge2,wBf2";
-        byte[] key = Encoding.UTF8.GetBytes(keystring);
-        DesCore ds = new(key, CryptoCenter.CryptType.ECB);
+        //string keystring = "Ge2,wBf2";
+        //byte[] key = Encoding.UTF8.GetBytes(keystring);
 
+        byte[] key = new byte[]
+        {
+            0xAA,
+            0xBB,
+            0x09,
+            0x18,
+            0x27,
+            0x36,
+            0xCC,
+            0xDD
+        };
+        DesCore ds = new(key, CryptoCenter.CryptType.ECB);
+        byte[] data = new byte[] {
+            0x12,
+            0x34,
+            0x56,
+            0xAB,
+            0xCD,
+            0x13,
+            0x25,
+            0x36 };
+
+        byte[] res = ds.crypt(data, key);
+        byte[] answ = ds.crypt(res, key);
+
+
+        return;
     }
 }
