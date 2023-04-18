@@ -9,8 +9,16 @@ class Program
     {
         Console.WriteLine("Hello world!");
 
-        //string keystring = "Ge2,wBf2";
-        //byte[] key = Encoding.UTF8.GetBytes(keystring);
+        string keystring = "Ge2,wBf2";
+        byte[] perma = Encoding.UTF8.GetBytes(keystring);
+        Console.WriteLine(Encoding.Default.GetString(perma));
+        CryptCore.Permutation(ref perma, CryptCore.primaryPerm);
+        Console.WriteLine(Encoding.Default.GetString(perma));
+        CryptCore.Permutation(ref perma, CryptCore.reversePerm);
+        Console.WriteLine(Encoding.Default.GetString(perma));
+
+
+
 
         byte[] key = new byte[]
         {

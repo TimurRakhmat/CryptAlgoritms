@@ -41,8 +41,16 @@ namespace Des
                     tmpleft[j] ^= left[j];
                 }
 
-                tmpleft.CopyTo(right, 0);
-                tmpright.CopyTo(left, 0);
+                if (i != 15)
+                {
+                    tmpleft.CopyTo(right, 0);
+                    tmpright.CopyTo(left, 0);
+                }
+                else
+                {
+                    tmpleft.CopyTo(left, 0);
+                    tmpright.CopyTo(right, 0);
+                }
             }
 
             Buffer.BlockCopy(left, 0, res, 0, n);
