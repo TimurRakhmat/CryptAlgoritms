@@ -21,7 +21,7 @@ class Program
             0xCC,
             0xDD
         };
-        DesCore ds = new(ipv, CryptoCenter.CryptType.ECB, ipv);
+        DesCore ds = new(ipv, CryptoCenter.CryptType.OFB, ipv);
         byte[] data = new byte[] {
             0x12,
             0x34,
@@ -36,10 +36,10 @@ class Program
         byte[] answ = ds.decrypt(res, key);
 
 
-        string my_data = "qwerty12345678YXZ_+_10101010";
+        string my_data = "qwerty12345678YXZ_+_10101010OLOLOLOasdfghjkll;'zxcvbnm,.";
         byte [] ds_bytes = Encoding.UTF8.GetBytes(my_data);
 
-        ds.cryptBytes(ds_bytes, ref res);
+        ds.encryptBytes(ds_bytes, ref res);
         Console.WriteLine(Encoding.Default.GetString(res));
         ds.decryptBytes(res, ref answ);
         Console.WriteLine(Encoding.Default.GetString(answ));
