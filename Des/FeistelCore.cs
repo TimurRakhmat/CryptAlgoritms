@@ -8,10 +8,10 @@ namespace Des
 {
     internal class FeistelCore : CryptoCenter
     {
-        public FeistelCore(byte[] key, CryptType type, string ipv = "12345678", params int[] other) : base(key, type, ipv, other) { }
+        public FeistelCore(byte[] key, CryptType type, byte[] ipv = null, params int[] other) : base(key, type, ipv, other) { }
 
 
-        public override byte[] crypt(byte[] data, byte[] key)
+        public override byte[] encrypt(byte[] data, byte[] key)
         {
             byte[] res = new byte[data.Length];
 
@@ -61,7 +61,7 @@ namespace Des
             return res;
         }
 
-        public override byte[] encrypt(byte[] data, byte[] key)
+        public override byte[] decrypt(byte[] data, byte[] key)
         {
             byte[] res = new byte[data.Length];
 
@@ -91,8 +91,16 @@ namespace Des
                     tmpleft[j] ^= left[j];
                 }
 
-                tmpleft.CopyTo(right, 0);
-                tmpright.CopyTo(left, 0);
+                if (i != 15)
+                {
+                    tmpleft.CopyTo(right, 0);
+                    tmpright.CopyTo(left, 0);
+                }
+                else
+                {
+                    tmpleft.CopyTo(left, 0);
+                    tmpright.CopyTo(right, 0);
+                }
             }
 
             Buffer.BlockCopy(left, 0, res, 0, n);

@@ -8,7 +8,7 @@ namespace Des
 {
     internal interface ICryptTransform2
     {
-        byte[] crypt(byte[] data, byte[] key);
         byte[] encrypt(byte[] data, byte[] key);
+        byte[] decrypt(byte[] data, byte[] key);
     }
 }

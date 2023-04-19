@@ -7,31 +7,21 @@ class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Hello world!");
-
-        string keystring = "Ge2,wBf2";
-        byte[] perma = Encoding.UTF8.GetBytes(keystring);
-        Console.WriteLine(Encoding.Default.GetString(perma));
-        CryptCore.Permutation(ref perma, CryptCore.primaryPerm);
-        Console.WriteLine(Encoding.Default.GetString(perma));
-        CryptCore.Permutation(ref perma, CryptCore.reversePerm);
-        Console.WriteLine(Encoding.Default.GetString(perma));
-
-
-
+        string ipv_string = "12345678";
+        byte[] ipv = Encoding.UTF8.GetBytes(ipv_string);
 
         byte[] key = new byte[]
         {
-            0xAA,
+            0x23,
             0xBB,
             0x09,
             0x18,
             0x27,
-            0x36,
+            0x3B,
             0xCC,
             0xDD
         };
-        DesCore ds = new(key, CryptoCenter.CryptType.ECB);
+        DesCore ds = new(ipv, CryptoCenter.CryptType.ECB, ipv);
         byte[] data = new byte[] {
             0x12,
             0x34,
@@ -42,9 +32,17 @@ class Program
             0x25,
             0x36 };
 
-        byte[] res = ds.crypt(data, key);
-        byte[] answ = ds.crypt(res, key);
+        byte[] res = ds.encrypt(data, key);
+        byte[] answ = ds.decrypt(res, key);
 
+
+        string my_data = "qwerty12345678YXZ_+_10101010";
+        byte [] ds_bytes = Encoding.UTF8.GetBytes(my_data);
+
+        ds.cryptBytes(ds_bytes, ref res);
+        Console.WriteLine(Encoding.Default.GetString(res));
+        ds.decryptBytes(res, ref answ);
+        Console.WriteLine(Encoding.Default.GetString(answ));
 
         return;
     }

@@ -36,7 +36,7 @@ namespace Des
                1, 2, 2, 2,
                2, 2, 2, 1};
 
-        public DesCore(byte[] key, CryptType type, string ipv = "12345678", params int[] other):base(key, type, ipv, other) 
+        public DesCore(byte[] key, CryptType type, byte[] ipv = null, params int[] other):base(key, type, ipv, other) 
         {
             return;
         }
@@ -61,10 +61,10 @@ namespace Des
             for (int i = 0; i < 16; i++)
             {
                 bytes[i] = new byte[6];
-                c = (c << shift_table[i]) | (c >> (28 - shift_table[i]) & (0x1 << (shift_table[i] - 1)));
-                d = (d << shift_table[i]) | (d >> (28 - shift_table[i]) & (0x1 << (shift_table[i] - 1)));
+                c = ((c << shift_table[i]) | ((c >> (28 - shift_table[i])) & ((0x1 << shift_table[i]) - 1))) & ((0x1 << 28) - 1);
+                d = ((d << shift_table[i]) | ((d >> (28 - shift_table[i])) & ((0x1 << shift_table[i]) - 1))) & ((0x1 << 28) - 1);
 
-                for (int j = 0; j < 3; j++)
+            for (int j = 0; j < 3; j++)
                 {
                     tmp[j] = (byte)(c >> (j * 8) & 0xFF);
                     tmp[4 + j] = (byte)(d >> (j * 8 + 4) & 0xFF);
@@ -89,11 +89,11 @@ namespace Des
             CryptCore.Permutation(ref tmp, exp_d);
             CryptCore.set_sblock();
 
-            long right = 0;
+            ulong right = 0;
 
             for (int i = 0; i < 6; i++)
             {
-                right += tmp[i] << (8*i);
+                right += ((ulong)tmp[i]) << (8*i);
             }
 
             for (int i = 0; i < 8; i++)
