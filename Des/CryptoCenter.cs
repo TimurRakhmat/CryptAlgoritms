@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,6 +14,8 @@ namespace Des
 
         CryptType m_type;
         byte[] m_ipv;
+        int BLOCK_LENGHT;
+        static int THREAD_COUNT = 8;
 
         public enum CryptType
         {
@@ -22,124 +26,123 @@ namespace Des
             m_type = type;
             round_key = generateKey(key);
             m_ipv = ipv;
+            BLOCK_LENGHT = other[0];
         }
 
-        public void encryptBytes(byte[] data, ref byte[] outdata) 
+        public byte[] encryptBytes(byte[] data) 
         {
+            int n = data.Length / BLOCK_LENGHT;
+            if (data.Length % BLOCK_LENGHT != 0)
+                n++;
+
+            byte[] outdata = new byte[n * BLOCK_LENGHT];
+
+            
+
             if (m_type == CryptType.ECB)
             {
-                int n = data.Length / 8;
-                if (data.Length % 8 != 0)
-                    n++;
+                if (data.Length % BLOCK_LENGHT != 0)
+                    n--;
 
-                outdata = new byte[n*8];
-
-                byte[] tmp = new byte[8];
-                byte[] res;
                 
-                for(int i = 0; i < n; i++)
+                Task[] tasks = new Task[THREAD_COUNT];
+                for (int i = 0; i < THREAD_COUNT; i++)
                 {
-                    int block_count = 8;
-                    if (i == n - 1 && data.Length % 8 != 0)
-                        block_count = data.Length % 8;
-                    Buffer.BlockCopy(data, i * 8, tmp, 0, block_count);
-                    if (i == n - 1)
-                        add_padding(ref tmp, 8, block_count);
-                    res = encrypt(tmp, null);
-                    Buffer.BlockCopy(res, 0, outdata, i * 8, 8);
+                    int thread_index = i;
+                    tasks[thread_index] = new Task(() =>
+                    {
+                        int index = thread_index;
+                        while (index < n)
+                        {
+                            byte[] tmp = new byte[BLOCK_LENGHT];
+                            Buffer.BlockCopy(data, index * BLOCK_LENGHT, tmp, 0, BLOCK_LENGHT);
+                            tmp = encrypt(tmp, null);
+                            Buffer.BlockCopy(tmp, 0, outdata, index * BLOCK_LENGHT, BLOCK_LENGHT);
+                            index += THREAD_COUNT;
+                        }
+                    });
+                    tasks[thread_index].Start();
                 }
 
-                return;
+                Task.WaitAll(tasks);
+
+                int block_count = BLOCK_LENGHT;
+                if (data.Length % BLOCK_LENGHT != 0)
+                {
+                    byte[] tmp = new byte[BLOCK_LENGHT];
+                    block_count = data.Length % BLOCK_LENGHT;
+                    Buffer.BlockCopy(data, n * BLOCK_LENGHT, tmp, 0, block_count);
+                    add_padding(ref tmp, BLOCK_LENGHT, block_count);
+                    tmp = encrypt(tmp, null);
+                    Buffer.BlockCopy(tmp, 0, outdata, n * BLOCK_LENGHT, BLOCK_LENGHT);
+                }
+
             }
             else if (m_type == CryptType.CBC)
             {
-                int n = data.Length / 8;
-                if (data.Length % 8 != 0)
-                    n++;
-
-                outdata = new byte[n * 8];
-
-                byte[] tmp = new byte[8];
+                byte[] tmp = new byte[BLOCK_LENGHT];
                 byte[] res;
 
-                byte[] ipv = new byte[8];
+                byte[] ipv = new byte[BLOCK_LENGHT];
                 m_ipv.CopyTo(ipv, 0);
 
                 for (int i = 0; i < n; i++)
                 {
-                    int block_count = 8;
-                    if (i == n - 1 && data.Length % 8 != 0)
-                        block_count = data.Length % 8;
-                    Buffer.BlockCopy(data, i * 8, tmp, 0, block_count);
+                    int block_count = BLOCK_LENGHT;
+                    if (i == n - 1 && data.Length % BLOCK_LENGHT != 0)
+                        block_count = data.Length % BLOCK_LENGHT;
+                    Buffer.BlockCopy(data, i * BLOCK_LENGHT, tmp, 0, block_count);
                     if (i == n - 1)
-                        add_padding(ref tmp, 8, block_count);
+                        add_padding(ref tmp, BLOCK_LENGHT, block_count);
                     tmp = xor_bytes(tmp, ipv);
                     res = encrypt(tmp, null);
                     res.CopyTo(ipv, 0);
-                    Buffer.BlockCopy(res, 0, outdata, i * 8, 8);
+                    Buffer.BlockCopy(res, 0, outdata, i * BLOCK_LENGHT, BLOCK_LENGHT);
                 }
-
-                return;
             }
             else if (m_type == CryptType.CFB)
             {
-                int n = data.Length / 8;
-                if (data.Length % 8 != 0)
-                    n++;
-
-                outdata = new byte[n * 8];
-
-                byte[] tmp = new byte[8];
+                byte[] tmp = new byte[BLOCK_LENGHT];
                 byte[] res;
 
-                byte[] ipv = new byte[8];
+                byte[] ipv = new byte[BLOCK_LENGHT];
                 m_ipv.CopyTo(ipv, 0);
 
                 for (int i = 0; i < n; i++)
                 {
-                    int block_count = 8;
-                    if (i == n - 1 && data.Length % 8 != 0)
-                        block_count = data.Length % 8;
-                    Buffer.BlockCopy(data, i * 8, tmp, 0, block_count);
+                    int block_count = BLOCK_LENGHT;
+                    if (i == n - 1 && data.Length % BLOCK_LENGHT != 0)
+                        block_count = data.Length % BLOCK_LENGHT;
+                    Buffer.BlockCopy(data, i * BLOCK_LENGHT, tmp, 0, block_count);
                     if (i == n - 1)
-                        add_padding(ref tmp, 8, block_count);
+                        add_padding(ref tmp, BLOCK_LENGHT, block_count);
                     res = encrypt(ipv, null);
                     tmp = xor_bytes(tmp, res);
                     tmp.CopyTo(ipv, 0);
-                    Buffer.BlockCopy(tmp, 0, outdata, i * 8, 8);
+                    Buffer.BlockCopy(tmp, 0, outdata, i * BLOCK_LENGHT, BLOCK_LENGHT);
                 }
-
-                return;
             }
             else if (m_type == CryptType.OFB)
             {
-                int n = data.Length / 8;
-                if (data.Length % 8 != 0)
-                    n++;
-
-                outdata = new byte[n * 8];
-
-                byte[] tmp = new byte[8];
+                byte[] tmp = new byte[BLOCK_LENGHT];
                 byte[] res;
 
-                byte[] ipv = new byte[8];
+                byte[] ipv = new byte[BLOCK_LENGHT];
                 m_ipv.CopyTo(ipv, 0);
 
                 for (int i = 0; i < n; i++)
                 {
-                    int block_count = 8;
-                    if (i == n - 1 && data.Length % 8 != 0)
-                        block_count = data.Length % 8;
-                    Buffer.BlockCopy(data, i * 8, tmp, 0, block_count);
+                    int block_count = BLOCK_LENGHT;
+                    if (i == n - 1 && data.Length % BLOCK_LENGHT != 0)
+                        block_count = data.Length % BLOCK_LENGHT;
+                    Buffer.BlockCopy(data, i * BLOCK_LENGHT, tmp, 0, block_count);
                     if (i == n - 1)
-                        add_padding(ref tmp, 8, block_count);
+                        add_padding(ref tmp, BLOCK_LENGHT, block_count);
                     res = encrypt(ipv, null);
                     res.CopyTo(ipv, 0);
                     tmp = xor_bytes(tmp, res);
-                    Buffer.BlockCopy(tmp, 0, outdata, i * 8, 8);
+                    Buffer.BlockCopy(tmp, 0, outdata, i * BLOCK_LENGHT, BLOCK_LENGHT);
                 }
-
-                return;
             }
             else if (m_type == CryptType.CTR)
             {
@@ -147,156 +150,189 @@ namespace Des
             }
             else if (m_type == CryptType.RD)
             {
-                int n = data.Length / 8;
-                if (data.Length % 8 != 0)
-                    n++;
-
-                outdata = new byte[n * 8];
-
-                byte[] tmp = new byte[8];
+                byte[] tmp = new byte[BLOCK_LENGHT];
                 byte[] res;
 
-                byte[] ipv = new byte[8];
+                byte[] ipv = new byte[BLOCK_LENGHT];
                 m_ipv.CopyTo(ipv, 0);
 
                 for (int i = 0; i < n; i++)
                 {
-                    int block_count = 8;
-                    if (i == n - 1 && data.Length % 8 != 0)
-                        block_count = data.Length % 8;
+                    int block_count = BLOCK_LENGHT;
+                    if (i == n - 1 && data.Length % BLOCK_LENGHT != 0)
+                        block_count = data.Length % BLOCK_LENGHT;
                     Buffer.BlockCopy(data, i * 8, tmp, 0, block_count);
                     if (i == n - 1)
-                        add_padding(ref tmp, 8, block_count);
+                        add_padding(ref tmp, BLOCK_LENGHT, block_count);
 
                     tmp = xor_bytes(tmp, ipv);
                     
                     res = encrypt(tmp, null);
-                    Buffer.BlockCopy(res, 0, outdata, i * 8, 8);
+                    Buffer.BlockCopy(res, 0, outdata, i * BLOCK_LENGHT, BLOCK_LENGHT);
                 }
-
-                return;
             }
             else if (m_type == CryptType.RD_H)
             {
 
             }
+
+            return outdata;
         }
-        public void decryptBytes(byte[] data, ref byte[] outdata) 
+        public byte[] decryptBytes(byte[] data) 
         {
+            int n = data.Length / BLOCK_LENGHT;
+            byte[] outdata = new byte[n * BLOCK_LENGHT];
+
             if (m_type == CryptType.ECB)
             {
-                int n = data.Length / 8;
+                Task[] tasks = new Task[THREAD_COUNT];
+                for (int i = 0; i < THREAD_COUNT; i++)
+                {
+                    int thread_index = i;
+                    tasks[thread_index] = new Task(() =>
+                    {
+                        int index = thread_index;
+                        while (index < n-1)
+                        {
+                            byte[] tmp = new byte[BLOCK_LENGHT];
+                            Buffer.BlockCopy(data, index * BLOCK_LENGHT, tmp, 0, BLOCK_LENGHT);
+                            tmp = decrypt(tmp, null);
+                            Buffer.BlockCopy(tmp, 0, outdata, index * BLOCK_LENGHT, BLOCK_LENGHT);
+                            index += THREAD_COUNT;
+                        }
+                    });
+                    tasks[thread_index].Start();
+                }
 
-                outdata = new byte[n * 8];
+                Task.WaitAll(tasks);
 
-                byte[] tmp = new byte[8];
-                byte[] res;
+                byte[] tmp = new byte[BLOCK_LENGHT];
 
                 int padding = 0;
-
-                for (int i = 0; i < n; i++)
-                {
-                    Buffer.BlockCopy(data, i * 8, tmp, 0, 8);
-                    res = decrypt(tmp, null);
-                    if (i == n - 1)
-                        padding = del_padding(ref res, 8);
-                    Buffer.BlockCopy(res, 0, outdata, i * 8, 8 - padding);
-                }
+                Buffer.BlockCopy(data, (n - 1) * BLOCK_LENGHT, tmp, 0, BLOCK_LENGHT);
+                tmp = decrypt(tmp, null);
+                padding = del_padding(ref tmp, BLOCK_LENGHT);
+                Buffer.BlockCopy(tmp, 0, outdata, (n - 1) * BLOCK_LENGHT, BLOCK_LENGHT - padding);
 
                 if (padding > 0)
                     Array.Resize(ref outdata, outdata.Length - padding);
-                return;
-
             }
             else if (m_type == CryptType.CBC)
             {
-                int n = data.Length / 8;
-                if (data.Length % 8 != 0)
-                    n++;
+                //byte[] res;
 
-                outdata = new byte[n * 8];
+                //int padding = 0;
 
-                byte[] tmp = new byte[8];
+                //byte[] ipv = new byte[BLOCK_LENGHT];
+                //m_ipv.CopyTo(ipv, 0);
+
+                //for (int i = 0; i < n; i++)
+                //{
+                //    Buffer.BlockCopy(data, i * BLOCK_LENGHT, tmp, 0, BLOCK_LENGHT);
+                //    res = decrypt(tmp, null);
+                //    res = xor_bytes(res, ipv);
+                //    if (i == n - 1)
+                //        padding = del_padding(ref res, BLOCK_LENGHT);
+                //    Buffer.BlockCopy(res, 0, outdata, i * BLOCK_LENGHT, BLOCK_LENGHT - padding);
+
+                //    Buffer.BlockCopy(data, i * BLOCK_LENGHT, ipv, 0, 8);
+                //}
+
+
+                byte[] tmp = new byte[BLOCK_LENGHT];
+                byte[] ipv = new byte[BLOCK_LENGHT];
                 byte[] res;
-
                 int padding = 0;
-
-                byte[] ipv = new byte[8];
                 m_ipv.CopyTo(ipv, 0);
+                Buffer.BlockCopy(data, 0, tmp, 0, BLOCK_LENGHT);
+                res = decrypt(tmp, null);
+                res = xor_bytes(res, ipv);
+                if (n == 1)
+                    padding = del_padding(ref res, BLOCK_LENGHT);
+                Buffer.BlockCopy(res, 0, outdata, 0, BLOCK_LENGHT - padding);
 
-                for (int i = 0; i < n; i++)
+
+                Task[] tasks = new Task[THREAD_COUNT];
+                for (int i = 0; i < THREAD_COUNT; i++)
                 {
-                    Buffer.BlockCopy(data, i * 8, tmp, 0, 8);
-                    res = decrypt(tmp, null);
-                    res = xor_bytes(res, ipv);
-                    if (i == n - 1)
-                        padding = del_padding(ref res, 8);
-                    Buffer.BlockCopy(res, 0, outdata, i * 8, 8 - padding);
-
-                    Buffer.BlockCopy(data, i * 8, ipv, 0, 8);
+                    int thread_index = i;
+                    tasks[thread_index] = new Task(() =>
+                    {
+                        int index = thread_index + 1;
+                        byte[] tmp = new byte[BLOCK_LENGHT];
+                        byte[] ipv = new byte[BLOCK_LENGHT];
+                        while (index < n - 1)
+                        {
+                            Buffer.BlockCopy(data, index * BLOCK_LENGHT, tmp, 0, BLOCK_LENGHT);
+                            tmp = decrypt(tmp, null);
+                            Buffer.BlockCopy(data, (index - 1) * BLOCK_LENGHT, ipv, 0, BLOCK_LENGHT);
+                            tmp = xor_bytes(tmp, ipv);
+                            Buffer.BlockCopy(tmp, 0, outdata, index * BLOCK_LENGHT, BLOCK_LENGHT);
+                            index += THREAD_COUNT;
+                        }
+                    });
+                    tasks[thread_index].Start();
                 }
 
-                return;
+                Task.WaitAll(tasks);
+
+
+                if (n > 1)
+                {
+                    Buffer.BlockCopy(data, (n - 1) * BLOCK_LENGHT, tmp, 0, BLOCK_LENGHT);
+                    Buffer.BlockCopy(data, (n - 2) * BLOCK_LENGHT, ipv, 0, BLOCK_LENGHT);
+                    tmp = decrypt(tmp, null);
+                    tmp = xor_bytes(tmp, ipv);
+                    padding = del_padding(ref tmp, BLOCK_LENGHT);
+                    Buffer.BlockCopy(tmp, 0, outdata, (n - 1) * BLOCK_LENGHT, BLOCK_LENGHT - padding);
+                }
+                if (padding > 0)
+                    Array.Resize(ref outdata, outdata.Length - padding);
             }
             else if (m_type == CryptType.CFB)
             {
-                int n = data.Length / 8;
-                if (data.Length % 8 != 0)
-                    n++;
-
-                outdata = new byte[n * 8];
-
-                byte[] tmp = new byte[8];
+                byte[] tmp = new byte[BLOCK_LENGHT];
                 byte[] res;
 
                 int padding = 0;
 
-                byte[] ipv = new byte[8];
+                byte[] ipv = new byte[BLOCK_LENGHT];
                 m_ipv.CopyTo(ipv, 0);
 
                 for (int i = 0; i < n; i++)
                 {
-                    Buffer.BlockCopy(data, i * 8, tmp, 0, 8);
+                    Buffer.BlockCopy(data, i * BLOCK_LENGHT, tmp, 0, BLOCK_LENGHT);
                     res = decrypt(ipv, null);
                     tmp.CopyTo(ipv, 0);
                     res = xor_bytes(res, tmp);
                     if (i == n - 1)
-                        padding = del_padding(ref res, 8);
-                    Buffer.BlockCopy(res, 0, outdata, i * 8, 8 - padding);
+                        padding = del_padding(ref res, BLOCK_LENGHT);
+                    Buffer.BlockCopy(res, 0, outdata, i * BLOCK_LENGHT, BLOCK_LENGHT - padding);
 
                 }
-
-                return;
             }
             else if (m_type == CryptType.OFB)
             {
-                int n = data.Length / 8;
-                if (data.Length % 8 != 0)
-                    n++;
-
-                outdata = new byte[n * 8];
-
-                byte[] tmp = new byte[8];
+                byte[] tmp = new byte[BLOCK_LENGHT];
                 byte[] res;
 
                 int padding = 0;
 
-                byte[] ipv = new byte[8];
+                byte[] ipv = new byte[BLOCK_LENGHT];
                 m_ipv.CopyTo(ipv, 0);
 
                 for (int i = 0; i < n; i++)
                 {
-                    Buffer.BlockCopy(data, i * 8, tmp, 0, 8);
+                    Buffer.BlockCopy(data, i * BLOCK_LENGHT, tmp, 0, BLOCK_LENGHT);
                     res = decrypt(ipv, null);
                     res.CopyTo(ipv, 0);
                     res = xor_bytes(res, tmp);
                     if (i == n - 1)
-                        padding = del_padding(ref res, 8);
-                    Buffer.BlockCopy(res, 0, outdata, i * 8, 8 - padding);
+                        padding = del_padding(ref res, BLOCK_LENGHT);
+                    Buffer.BlockCopy(res, 0, outdata, i * BLOCK_LENGHT, BLOCK_LENGHT - padding);
 
                 }
 
-                return;
             }
             else if (m_type == CryptType.CTR)
             {
@@ -310,10 +346,55 @@ namespace Des
             {
 
             }
+
+            return outdata;
         }
 
-        public void cryptFile(string filepath, string outfilepath) { }
-        public void decryptFile(string filepath, string outfilepath) { }
+        public async Task encryptFile(string filepath, string outfilepath) 
+        {
+            int BUF_SIZE = 65536;
+            FileStream file = new(filepath, FileMode.OpenOrCreate, FileAccess.Read);
+            FileStream outf = new(outfilepath, FileMode.OpenOrCreate, FileAccess.Write);
+
+            byte[] buffer = new byte[BUF_SIZE];
+            int n = 1;
+            int i = 0;
+            while (n != 0)
+            {
+                n = await file.ReadAsync(buffer, 0, buffer.Length);
+                if (n == 0)
+                    break;
+                if (n != BUF_SIZE)
+                    Array.Resize(ref buffer, n);
+                buffer = encryptBytes(buffer);
+                await outf.WriteAsync(buffer, 0, buffer.Length);
+                i++;
+            }
+            file.Close();
+            outf.Close();
+        }
+        public async Task decryptFile(string filepath, string outfilepath) 
+        {
+            int BUF_SIZE = 65536;
+            FileStream file = new(filepath, FileMode.OpenOrCreate, FileAccess.Read);
+            FileStream outf = new(outfilepath, FileMode.OpenOrCreate, FileAccess.Write);
+
+            byte[] buffer = new byte[BUF_SIZE];
+
+            int n = 1;
+            while (n != 0)
+            {
+                n = await file.ReadAsync(buffer, 0, buffer.Length);
+                if (n == 0)
+                    break;
+                if (n != BUF_SIZE)
+                    Array.Resize(ref buffer, n);
+                buffer = encryptBytes(buffer);
+                await outf.WriteAsync(buffer, 0, buffer.Length);
+            }
+            file.Close();
+            outf.Close();
+        }
 
         public virtual byte[] encrypt(byte[] data, byte[] key)
         {
