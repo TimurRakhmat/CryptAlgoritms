@@ -25,14 +25,14 @@ class Program
         DesCore ds = new(ipv, CryptoCenter.CryptType.RD, ipv, new int[]{ 8});
 
         string ipath = "C:\\Users\\t.rakhmatullin\\Documents\\dmdir\\scam\\matrix2.txt";
-        string opath = "C:\\Users\\t.rakhmatullin\\Documents\\dmdir\\scam\\out.txt";
+        string opath = "C:\\Users\\rahma\\Documents\\6_term\\Crypta\\someFIles\\some.txt";
         string oopath = "C:\\Users\\t.rakhmatullin\\Documents\\dmdir\\scam\\oout.txt";
 
         string vipath = "C:\\Users\\rahma\\Downloads\\invisible.mp4";
 
 
         //ds.encryptFile(ipath, opath);
-        await ds.encryptFile(ipath, opath);
+        await ds.encryptFile(vipath, opath);
         await ds.decryptFile(opath, oopath);
         Console.WriteLine("end");
 

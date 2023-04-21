@@ -2,18 +2,36 @@
 using Des;
 using Rijndael;
 using System.ComponentModel;
+using System.Text;
+using System.Threading.Tasks.Dataflow;
 
-Console.WriteLine("Hello, World!");
+class Programm
+{
+    static void Main(string[] args)
+    {
+        string ipv_string = "12345678123456781234567812345678";
+        byte[] ipv = Encoding.UTF8.GetBytes(ipv_string);
 
 
-byte a = 0x57;
-byte b = 0x83;
-byte c = 0x1b;
+        string data_str = "12345678123456781234567812345678";
+        byte[] data = Encoding.UTF8.GetBytes(data_str);
 
-byte r = GaloisField.mul(a, b, c);
 
-byte bb = GaloisField.inverse(b);
+        byte a = 0x57;
+        
 
-r = GaloisField.mul(b, bb);
 
-Console.WriteLine(r);
+        Console.WriteLine(GF.isPolynome(a));
+        Console.WriteLine(GF.isPolynome(0x1b));
+        Console.WriteLine(GF.isPolynome(0x1d));
+
+        var t = GF.getPolynomes();
+
+
+        RijndaelCore rd = new(ipv, CryptoCenter.CryptType.ECB, ipv, new int[] { 32, 32 });
+        rd.makeKeyGeneration();
+
+
+        rd.Cipher(data);
+    }
+}

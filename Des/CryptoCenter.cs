@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Des
 {
-    internal class CryptoCenter : ICryptTransform2, IKeyGenerate
+    public class CryptoCenter : ICryptTransform2, IKeyGenerate
     {
         public byte[][] round_key;
 
@@ -17,6 +17,7 @@ namespace Des
         byte[] m_ipv;
         int BLOCK_LENGHT;
         static int THREAD_COUNT = 8;
+        byte[] m__key;
 
         public enum CryptType
         {
@@ -25,9 +26,15 @@ namespace Des
         public CryptoCenter(byte[] key, CryptType type, byte[] ipv, params int[] other)
         {
             m_type = type;
-            round_key = generateKey(key);
+            m__key = new byte[key.Length];
+            key.CopyTo(m__key, 0);
             m_ipv = ipv;
             BLOCK_LENGHT = other[0];
+        }
+
+        public void makeKeyGeneration()
+        {
+            round_key = generateKey(m__key);
         }
 
         public byte[] encryptBytes(byte[] data) 

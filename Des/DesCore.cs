@@ -38,6 +38,7 @@ namespace Des
 
         public DesCore(byte[] key, CryptType type, byte[] ipv = null, params int[] other):base(key, type, ipv, other) 
         {
+            CryptCore.set_sblock();
             return;
         }
 
@@ -87,7 +88,7 @@ namespace Des
             byte[] tmp = new byte[6];
             data.CopyTo(tmp, 0 );
             CryptCore.Permutation(ref tmp, exp_d);
-            CryptCore.set_sblock();
+            
 
             ulong right = 0;
 
