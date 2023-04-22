@@ -14,7 +14,7 @@ namespace Rijndael
         int Nb = 4, Nk = 4, Nr = 10;
         byte mod = 0x1b;
 
-        public byte[,] rCon;
+        public byte[] rCon;
 
         public static byte[] Sbox = {
         0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76, 
@@ -54,7 +54,8 @@ namespace Rijndael
         0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
         };
 
-    public RijndaelCore(byte[] key, CryptType type, byte[] ipv, params int[] other) : base(key, type, ipv, other)
+    public RijndaelCore(byte[] key, CryptType type, Padding pad, byte[] ipv, params int[] other) : 
+            base(key, type, pad, ipv, other)
         {
             if (other.Length > 1) {
                 Nb = other[0] / 4;
@@ -71,13 +72,35 @@ namespace Rijndael
             if (other.Length > 2)
             {
                 mod = (byte)(other[2] & 0xff);
+                if (mod != 0x1b)
+                {
+                    generateSbox();
+                }
             }
+
+            makeKeyGeneration();
+        }
+
+       
+        public override byte[][] generateKey(byte[] key)
+        {
+            rCon = new byte[255];
+            byte x = 0x02;
+            byte tmp;
+            for (int i = 0; i < 255; i++)
+            {
+                tmp = GF.pow(x, i, mod);
+                rCon[i] = tmp; 
+            }
+            var w = keyExpansion(key);
+
+            return w;
         }
 
         private byte[][] keyExpansion(byte[] key)
         {
             int size = Nb * (Nr + 1);
-            byte[][] ww = new byte[Nb*(Nr + 1)][];
+            byte[][] ww = new byte[Nb * (Nr + 1)][];
             for (int i = 0; i < size; i++)
             {
                 ww[i] = new byte[4];
@@ -98,8 +121,7 @@ namespace Rijndael
                 if (i % Nk == 0)
                 {
                     temp = SubWord(RotateWord(temp));
-                    for (int t = 0; t < 4; t++)
-                        temp[t] ^= rCon[(i / Nk) - 1, t];
+                    temp[0] ^= rCon[(i / Nk) - 1];
                 }
                 else if (Nk > 6 && i % Nk == 4)
                 {
@@ -112,22 +134,6 @@ namespace Rijndael
 
             return ww;
         }
-
-        public override byte[][] generateKey(byte[] key)
-        {
-            rCon = new byte[Nr+1, 4];
-            byte x = 0x02;
-            byte tmp;
-            for (int i = 0; i < Nr + 1; i++)
-            {
-                tmp = GF.pow(x, i, mod);
-                rCon[i, 0] = tmp; 
-            }
-            var w = keyExpansion(key);
-
-            return w;
-        }
-
 
         private byte[] SubWord(byte[] word)
         {
@@ -175,21 +181,20 @@ namespace Rijndael
         public byte[] Decipher(byte[] block)
         {
             byte[] state = new byte[block.Length];
+            block.CopyTo(state, 0);
 
-            block.CopyTo(state, Nr);
+            state = AddRoundKey(state, Nr);
 
-            state = AddRoundKey(state, 0);
-
-            for (int round = Nr - 1; round >= 0; round++)
+            for (int round = Nr - 1; round >= 1; round--)
             {
-                state = SubBytes(state);
-                state = ShiftRows(state);
-                state = MixColumns(state);
+                state = InvShiftRows(state);
+                state = InvSubBytes(state);
                 state = AddRoundKey(state, round);
+                state = InvMixColumns(state);
             }
 
-            state = SubBytes(state);
-            state = ShiftRows(state);
+            state = InvShiftRows(state);
+            state = InvSubBytes(state);
             state = AddRoundKey(state, 0);
 
             return state;
@@ -218,13 +223,12 @@ namespace Rijndael
             {
                 for (int c = 0; c < Nb; c++)
                 {
-                    int index = (c - shift[r - 1] + Nb) % Nb;
+                    int index = (c + shift[r - 1] + Nb) % Nb;
                     t[c] = state[index * 4 + r];
-                    //t[c] = state[r * shift[r - 1] + ((c + r) % Nb)];
                 }
 
                 for (int c = 0; c < Nb; c++)
-                    state[((c - shift[r-1] + Nb) % Nb) * 4 + r] = t[c];
+                    state[c*4 + r] = t[c];
             }
             return state;
         }
@@ -235,18 +239,17 @@ namespace Rijndael
             for (int c = 0; c < Nb; c++)
             {
                 byte[] a = new byte[4];
-                byte[] b = new byte[4];
+                byte[] b = { 0x03, 0x01, 0x01, 0x02 };
 
                 for (int i = 0; i < 4; i++)
                 {
-                    a[i] = state[i* 4 + c];
-                    b[i] = (byte)((state[i*4 + c] & 0x80) > 0 ? state[i*4 + c] << 1 ^ (0x100 | mod) : state[i * 4 + c] << 1);
+                    a[i] = state[i + 4 * c];
                 }
 
-                state[c] = (byte)(b[0] ^ a[1] ^ b[1] ^ a[2] ^ a[3]); // 2*a0 + 3*a1 + a2 + a3
-                state[4 + c] = (byte)(a[0] ^ b[1] ^ a[2] ^ b[2] ^ a[3]); // a0 + 2*a1 + 3*a2 + a3
-                state[8  + c] = (byte)(a[0] ^ a[1] ^ b[2] ^ a[3] ^ b[3]); // a0 + a1 + 2*a2 + 3*a3
-                state[12 + c] = (byte)(a[0] ^ b[0] ^ a[1] ^ a[2] ^ b[3]); // 3*a0 + a1 + a2 + 2*a3
+                state[c * 4] = (byte)(GF.mul(a[0], b[3], mod) ^ GF.mul(a[1], b[0], mod) ^ GF.mul(a[2], b[1], mod) ^ GF.mul(a[3], b[2], mod));
+                state[c * 4 + 1] = (byte)(GF.mul(a[0], b[2], mod) ^ GF.mul(a[1], b[3], mod) ^ GF.mul(a[2], b[0], mod) ^ GF.mul(a[3], b[1], mod));
+                state[c * 4 + 2] = (byte)(GF.mul(a[0], b[1], mod) ^ GF.mul(a[1], b[2], mod) ^ GF.mul(a[2], b[3], mod) ^ GF.mul(a[3], b[0], mod));
+                state[c * 4 + 3] = (byte)(GF.mul(a[0], b[0], mod) ^ GF.mul(a[1], b[1], mod) ^ GF.mul(a[2], b[2], mod) ^ GF.mul(a[3], b[3], mod));
             }
 
             return state;
@@ -275,12 +278,12 @@ namespace Rijndael
             {
                 for (int c = 0; c < Nb; c++)
                 {
-                    t[c] = state[((c + shift[r]) % Nb) * 4 + r];
-                    //t[c] = state[r * shift[r - 1] + ((c + r) % Nb)];
+                    int index = (c - shift[r - 1] + Nb) % Nb;
+                    t[c] = state[index * 4 + r];
                 }
 
                 for (int c = 0; c < Nb; c++)
-                    state[((c + shift[r]) % Nb) * 4 + r] = t[c];
+                    state[c * 4 + r] = t[c];
             }
             return state;
         }
@@ -295,38 +298,58 @@ namespace Rijndael
 
                 for (int i = 0; i < 4; i++)
                 {
-                    a[i] = state[i * 4 + c];
+                    a[i] = state[i + 4 * c];
                 }
 
-                state[c]      = (byte)(GF.mul(a[0], b[3]) ^ GF.mul(a[1], b[0]) ^ GF.mul(a[2], b[1]) ^ GF.mul(a[3], b[2]));
-                state[4 + c]  = (byte)(GF.mul(a[0], b[2]) ^ GF.mul(a[1], b[3]) ^ GF.mul(a[2], b[0]) ^ GF.mul(a[3], b[1]));
-                state[8 + c]  = (byte)(GF.mul(a[0], b[1]) ^ GF.mul(a[1], b[2]) ^ GF.mul(a[2], b[3]) ^ GF.mul(a[3], b[0]));
-                state[12 + c] = (byte)(GF.mul(a[0], b[0]) ^ GF.mul(a[1], b[1]) ^ GF.mul(a[2], b[2]) ^ GF.mul(a[3], b[3]))
+                state[c*4]     = (byte)(GF.mul(a[0], b[3], mod) ^ GF.mul(a[1], b[0], mod) ^ GF.mul(a[2], b[1], mod) ^ GF.mul(a[3], b[2], mod));
+                state[c*4 + 1] = (byte)(GF.mul(a[0], b[2], mod) ^ GF.mul(a[1], b[3], mod) ^ GF.mul(a[2], b[0], mod) ^ GF.mul(a[3], b[1], mod));
+                state[c*4 + 2] = (byte)(GF.mul(a[0], b[1], mod) ^ GF.mul(a[1], b[2], mod) ^ GF.mul(a[2], b[3], mod) ^ GF.mul(a[3], b[0], mod));
+                state[c*4 + 3] = (byte)(GF.mul(a[0], b[0], mod) ^ GF.mul(a[1], b[1], mod) ^ GF.mul(a[2], b[2], mod) ^ GF.mul(a[3], b[3], mod));
             }
 
             return state;
         }
 
-        // добавление раундового ключа
         private byte[] AddRoundKey(byte[] state, int rnd)
         {
-            for (int r = 0; r < 4; r++)
+            for (int r = 0; r < Nb; r++)
             {
-                for (int c = 0; c < Nb; c++)
-                    state[r * 4 + c] ^= round_key[rnd * 4 + c][r];
+                for (int c = 0; c < 4; c++)
+                    state[r * 4 + c] ^= round_key[rnd * 4 + r][c];
             }
 
             return state;
+        }
+
+        private void generateSbox()
+        {
+            byte[] data = new byte[256];
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = (byte)i;
+            }
+            byte tmp;
+            for (int i = 0; i < data.Length; i++)
+            {
+                tmp = GF.inverse(data[i], mod);
+                Sbox[i] = (byte)(tmp ^ cshft(tmp, 1) ^ cshft(tmp, 2) ^ cshft(tmp, 3) ^ cshft(tmp, 4) ^ 0x63);
+                InvSbox[Sbox[i]] = data[i];
+            }
+        }
+
+        static byte cshft(byte x, int shift)
+        {
+            return (byte)((x << shift) | (x >> (8 - shift)));
         }
 
         public override byte[] encrypt(byte[] data, byte[] key)
         {
-            return base.encrypt(data, key);
+            return Cipher(data);
         }
 
         public override byte[] decrypt(byte[] data, byte[] key)
         {
-            return base.decrypt(data, key);
+            return Decipher(data);
         }
     }
 }

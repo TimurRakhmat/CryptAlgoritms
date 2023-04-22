@@ -88,6 +88,24 @@ namespace Rijndael
             return true;
         }
 
+        static public bool isPolynome2(byte a)
+        {
+            HashSet<byte> set = new HashSet<byte>();
+
+            byte tmp = 0x11;
+            byte ttmp = 1;
+            for (int i = 0; i < 255; i++)
+            {
+                ttmp = GF.mul(ttmp, tmp, a);
+                if (set.Contains(ttmp))
+                    return false;
+                set.Add(ttmp);
+            }
+
+
+            return true;
+        }
+
         static public List<byte> getPolynomes()
         {
             List<byte> list = new List<byte>();
