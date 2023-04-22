@@ -22,46 +22,87 @@ class Program
             0xCC,
             0xDD
         };
-        DesCore ds = new(ipv, CryptoCenter.CryptType.RD, ipv, new int[]{ 8});
+        
 
-        string ipath = "C:\\Users\\t.rakhmatullin\\Documents\\dmdir\\scam\\matrix2.txt";
-        string opath = "C:\\Users\\rahma\\Documents\\6_term\\Crypta\\someFIles\\some.txt";
-        string oopath = "C:\\Users\\t.rakhmatullin\\Documents\\dmdir\\scam\\oout.txt";
+        //string ipath = "C:\\Users\\t.rakhmatullin\\Documents\\dmdir\\scam\\matrix2.txt";
+        //string opath = "C:\\Users\\rahma\\Documents\\6_term\\Crypta\\someFIles\\some.txt";
+        //string oopath = "C:\\Users\\t.rakhmatullin\\Documents\\dmdir\\scam\\oout.txt";
 
-        string vipath = "C:\\Users\\rahma\\Downloads\\invisible.mp4";
+        //string vipath = "C:\\Users\\rahma\\Downloads\\invisible.mp4";
 
 
         //ds.encryptFile(ipath, opath);
-        await ds.encryptFile(vipath, opath);
-        await ds.decryptFile(opath, oopath);
-        Console.WriteLine("end");
+        //await ds.encryptFile(vipath, opath);
+        //await ds.decryptFile(opath, oopath);
+        //Console.WriteLine("end");
 
-        //var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        //var stringChars = new char[2048];
-        //var random = new Random();
+        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var stringChars = new char[514];
+        var random = new Random();
 
-        //for (int i = 0; i < stringChars.Length; i++)
-        //{
-        //    stringChars[i] = chars[random.Next(chars.Length)];
-        //}
+        for (int i = 0; i < stringChars.Length; i++)
+        {
+            stringChars[i] = chars[random.Next(chars.Length)];
+        }
 
-        //var finalString = new String(stringChars);
-        //byte [] ds_bytes = Encoding.UTF8.GetBytes(finalString);
-        //Console.WriteLine(finalString);
-        //var sw = new Stopwatch();
-        //sw.Start();
-        //byte[] res = ds.encryptBytes(ds_bytes);
-        //sw.Stop();
-        //Console.WriteLine("ecb ecncrypt time" + sw.Elapsed);
-        ////Console.WriteLine("\n\n\n------------------------------------------------------------\n\n\n");
-        ////Console.WriteLine(Encoding.Default.GetString(res));
-        ////Console.WriteLine("\n\n\n------------------------------------------------------------\n\n\n");
-        //sw.Start();
-        //byte[] answ = ds.decryptBytes(res);
-        //sw.Stop();
-        //Console.WriteLine("ecb decrypt time" + sw.Elapsed);
-        //Console.WriteLine(Encoding.Default.GetString(answ));
+        var finalString = new String(stringChars);
+        byte[] ds_bytes = Encoding.UTF8.GetBytes(finalString);
+        Console.WriteLine(finalString);
 
+        DesCore ds = new(ipv, CryptoCenter.CryptType.OFB, CryptoCenter.Padding.PKCS, ipv, new int[] { 8 });
+        byte[] res = ds.encryptBytes(ds_bytes);
+        Console.WriteLine("\n\n\n------------------------------------------------------------\n\n\n");
+        byte[] answ = ds.decryptBytes(res);
+        Console.WriteLine(Encoding.Default.GetString(answ));
+
+        ds = new(ipv, CryptoCenter.CryptType.CBC, CryptoCenter.Padding.PKCS, ipv, new int[] { 8 });
+        ds_bytes = Encoding.UTF8.GetBytes(finalString);
+        res = ds.encryptBytes(ds_bytes);
+        Console.WriteLine("\n\n\n------------------------------------------------------------\n\n\n");
+        res = ds.decryptBytes(res);
+        Console.WriteLine(Encoding.Default.GetString(answ));
+
+        ds = new(ipv, CryptoCenter.CryptType.CFB, CryptoCenter.Padding.PKCS, ipv, new int[] { 8 });
+        ds_bytes = Encoding.UTF8.GetBytes(finalString);
+        res = ds.encryptBytes(ds_bytes);
+        Console.WriteLine("\n\n\n------------------------------------------------------------\n\n\n");
+        res = ds.decryptBytes(res);
+        Console.WriteLine(Encoding.Default.GetString(answ));
+
+
+        ds = new(ipv, CryptoCenter.CryptType.OFB, CryptoCenter.Padding.PKCS, ipv, new int[] { 8 });
+        ds_bytes = Encoding.UTF8.GetBytes(finalString);
+        res = ds.encryptBytes(ds_bytes);
+        Console.WriteLine("\n\n\n------------------------------------------------------------\n\n\n");
+        res = ds.decryptBytes(res);
+        Console.WriteLine(Encoding.Default.GetString(answ));
+
+        ds = new(ipv, CryptoCenter.CryptType.CTR, CryptoCenter.Padding.PKCS, ipv, new int[] { 8 });
+        ds_bytes = Encoding.UTF8.GetBytes(finalString);
+        res = ds.encryptBytes(ds_bytes);
+        Console.WriteLine("\n\n\n------------------------------------------------------------\n\n\n");
+        res = ds.decryptBytes(res);
+        Console.WriteLine(Encoding.Default.GetString(answ));
+
+        ds = new(ipv, CryptoCenter.CryptType.RD, CryptoCenter.Padding.PKCS, ipv, new int[] { 8 });
+        ds_bytes = Encoding.UTF8.GetBytes(finalString);
+        res = ds.encryptBytes(ds_bytes);
+        Console.WriteLine("\n\n\n------------------------------------------------------------\n\n\n");
+        res = ds.decryptBytes(res);
+        Console.WriteLine(Encoding.Default.GetString(answ));
         return;
+    }
+
+    public void time_tester()
+    {
+        var sw = new Stopwatch();
+        sw.Start();
+
+        {
+
+        }
+
+        sw.Stop();
+        Console.WriteLine("ecb decrypt time" + sw.Elapsed);
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Des
 {
-    internal class DesCore : FeistelCore
+    public class DesCore : FeistelCore
     {
         static int[] keyp = {
             57, 49, 41, 33, 25, 17, 9, 1, 58, 50, 42, 34, 26, 18,
@@ -36,9 +36,11 @@ namespace Des
                1, 2, 2, 2,
                2, 2, 2, 1};
 
-        public DesCore(byte[] key, CryptType type, byte[] ipv = null, params int[] other):base(key, type, ipv, other) 
+        public DesCore(byte[] key, CryptType type, Padding pad, byte[] ipv = null, params int[] other):
+            base(key, type, pad, ipv, other) 
         {
             CryptCore.set_sblock();
+            makeKeyGeneration();
             return;
         }
 

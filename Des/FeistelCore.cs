@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace Des
 {
-    internal class FeistelCore : CryptoCenter
+    public class FeistelCore : CryptoCenter
     {
-        public FeistelCore(byte[] key, CryptType type, byte[] ipv = null, params int[] other) : base(key, type, ipv, other) { }
+        public FeistelCore(byte[] key, CryptType type, Padding pad, byte[] ipv = null, params int[] other) : 
+            base(key, type, pad, ipv, other) { }
 
 
         public override byte[] encrypt(byte[] data, byte[] key)
